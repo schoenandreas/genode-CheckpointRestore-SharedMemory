@@ -12,18 +12,6 @@
 #include <region_map/client.h>
 #include <foc_native_pd/client.h>
 
-//Genode added
-#include <base/log.h>
-#include <base/thread.h>
-#include <base/component.h>
-#include <base/heap.h>
-#include <base/attached_rom_dataspace.h>
-#include <base/printf.h>
-#include <util/volatile_object.h>
-#include <cpu_session/connection.h>
-#include <cpu_thread/client.h>
-
-
 /* Rtcr includes */
 #include "target_state.h"
 #include "target_child.h"
@@ -34,11 +22,9 @@
 
 namespace Rtcr {
 	class Checkpointer;
-	
+
 	constexpr bool checkpointer_verbose_debug = false;
 }
-
-	class Cpu_helper;
 
 
 class Rtcr::Checkpointer
@@ -77,8 +63,7 @@ private:
 	Genode::List<Ref_badge_info>            _region_maps;
 	Genode::List<Simplified_managed_dataspace_info> _managed_dataspaces;
 
-	Timer::Connection &_timer;
-	
+	Timer::Connection &_timer;	
 	
 
 	template<typename T>
@@ -168,8 +153,6 @@ private:
 	void _checkpoint_dataspaces();
 	void _checkpoint_dataspace_content(Genode::Dataspace_capability dst_ds_cap, Genode::Dataspace_capability src_ds_cap,
 			Genode::addr_t dst_offset, Genode::size_t size);
-	
-	
 
 public:
 	Checkpointer(Genode::Allocator &alloc, Target_child &child, Target_state &state, Timer::Connection &timer);

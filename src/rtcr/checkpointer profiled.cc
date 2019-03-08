@@ -11,24 +11,6 @@
 
 #include <util/profiler.h>
 
-#include "Cpu_helper.h"
-
-
-#include <base/log.h>
-#include <base/thread.h>
-#include <base/component.h>
-#include <base/heap.h>
-#include <base/attached_rom_dataspace.h>
-#include <base/printf.h>
-#include <util/volatile_object.h>
-#include <cpu_session/connection.h>
-#include <cpu_thread/client.h>
-
-
-
-
-
-
 using namespace Rtcr;
 
 /* removes all elements from a list and frees their memory */
@@ -1492,80 +1474,17 @@ Checkpointer::~Checkpointer()
 }
 
 
-
-
-
-
 void Checkpointer::checkpoint()
 {	
 	using Genode::log;
-
 	if(verbose_debug) Genode::log("Ckpt::\033[33m", __func__, "\033[0m()");
 
 	// Pause child
 	_child.pause();	
-	
-	
 	{
   		PROFILE_SCOPE("checkpoint()", "yellow", _timer)    //scope profiling open
-	
-	
-	//Thread_capability thread = _state._env.cpu().create_thread(_state._env.pd_session_cap(),"thread classless",Thread::Location() , Thread::Weight(), 0);	
-
-		/*{
-			void entry()
-			{			
-				{
-		  		PROFILE_SCOPE(Thread::name().string(), "red", _timer) 
-				//log(Thread::name().string(), " : _cpu_session=", _cpu_session, " env.cpu()=", &_env.cpu());
-					
-				//_timer.msleep(50);
-				}		
-			}		
-
-		}*/
-	//{
-  	//	PROFILE_SCOPE("Threads", "red", _timer) 	
-
-		Cpu_helper thread0(_state._env, "thread 0 entry", _state._env.cpu(),_alloc , _child, _state, _timer, *this);
-		Cpu_helper thread2(_state._env, "thread 2 entry", _state._env.cpu(),_alloc, _child, _state, _timer, *this);
-	
-		{
-  			PROFILE_SCOPE("Threads1", "red", _timer) 	
-			Cpu_helper thread1(_state._env, "prio high  ", _state._env.cpu(),_alloc, _child, _state, _timer, *this);
-		}
-		{
-  			PROFILE_SCOPE("Threads3", "red", _timer) 	
-			Cpu_helper thread3(_state._env, "prio high  ", _state._env.cpu(),_alloc, _child, _state, _timer, *this);
-		}
-
-		{
-  			PROFILE_SCOPE("Threads start", "red", _timer) 
-			thread0.start();
-		}
-		{
-  			PROFILE_SCOPE("Threads2 start", "red", _timer) 
-			thread2.start();
-		}
-		//Thread_capability tc = thread0.cap();
-		//Affinity::Space af =_state._env.cpu().affinity_space();
-	
-			
-		
-		
-		{
-  			PROFILE_SCOPE("Threads join", "red", _timer) 
-			thread0.join();
-		}
-		{
-  			PROFILE_SCOPE("Threads2 join", "red", _timer) 
-			thread2.join();
-		}
-	
-
-
   		
-//}	
+	
 	{
   		PROFILE_SCOPE("_create_kcap_mappings()", "green", _timer) 	
 
@@ -1584,8 +1503,6 @@ void Checkpointer::checkpoint()
 			info = info->next();
 		}
 	}
-
-
 
 	// Create a list of region map dataspaces which are known to child
 	// These dataspaces are ignored when creating copy dataspaces
@@ -1719,7 +1636,6 @@ void Checkpointer::checkpoint()
 		_destroy_list(_managed_dataspaces);		
 	}
 	
-	//unexplained time loss??	
 
 	}  //scope profiling close
 
