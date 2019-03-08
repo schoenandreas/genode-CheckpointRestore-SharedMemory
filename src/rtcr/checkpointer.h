@@ -12,17 +12,6 @@
 #include <region_map/client.h>
 #include <foc_native_pd/client.h>
 
-//Genode added
-#include <base/log.h>
-#include <base/thread.h>
-#include <base/component.h>
-#include <base/heap.h>
-#include <base/attached_rom_dataspace.h>
-#include <base/printf.h>
-#include <util/volatile_object.h>
-#include <cpu_session/connection.h>
-#include <cpu_thread/client.h>
-
 
 /* Rtcr includes */
 #include "target_state.h"
@@ -32,17 +21,21 @@
 #include "util/ref_badge_info.h"
 #include "util/simplified_managed_dataspace_info.h"
 
+	
+
 namespace Rtcr {
 	class Checkpointer;
 	
 	constexpr bool checkpointer_verbose_debug = false;
 }
 
-	class Cpu_helper;
+class Cpu_helper;	
 
 
 class Rtcr::Checkpointer
 {
+	friend class ::Cpu_helper;
+
 private:
 
 	/**
@@ -179,6 +172,7 @@ public:
 	 * Checkpoint all (known) RPC objects and capabilities from _child to _state
 	 */
 	void checkpoint();
+	
 
 	
 };

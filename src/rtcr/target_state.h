@@ -11,6 +11,8 @@
 #include <util/list.h>
 #include <base/heap.h>
 
+
+
 /* Rtcr includes */
 #include "offline_storage/stored_cpu_session_info.h"
 #include "offline_storage/stored_log_session_info.h"
@@ -26,8 +28,7 @@ namespace Rtcr {
 
 	// Forward declaration
 	class Checkpointer;
-	class Restorer;
-	//class Cpu_helper;
+	class Restorer;	
 }
 
 
@@ -37,12 +38,12 @@ class Rtcr::Target_state
 	friend class Checkpointer;
 	friend class Restorer;
 	friend class Main;
-	//friend class Cpu_helper;
+
 
 private:
 	Genode::Env       &_env;
 	Genode::Allocator &_alloc;
-
+public:
 	Genode::List<Stored_pd_session_info>    _stored_pd_sessions;
 	Genode::List<Stored_cpu_session_info>   _stored_cpu_sessions;
 	Genode::List<Stored_ram_session_info>   _stored_ram_sessions;
@@ -53,7 +54,7 @@ private:
 
 	Genode::addr_t _cap_idx_alloc_addr;
 
-public:
+
 	Target_state(Genode::Env &env, Genode::Allocator &alloc);
 	~Target_state();
 
