@@ -1285,7 +1285,7 @@ void Restorer::_restore_dataspaces()
 				{
 					_restore_dataspace_content(sdd_info->dataspace_cap, memory_info->ckpt_ds_cap, sdd_info->addr, sdd_info->size);
 
-					sdd_info = sdd_info->next();
+					sdd_info = sdd_info->Genode::List<Simplified_managed_dataspace_info::Simplified_designated_ds_info>::Element::next();
 				}
 
 			}
@@ -1298,7 +1298,7 @@ void Restorer::_restore_dataspaces()
 			memory_info->processed = true;
 		}
 
-		memory_info = memory_info->next();
+		memory_info = memory_info->Genode::List<Dataspace_translation_info>::Element::next();
 	}
 }
 
@@ -1491,7 +1491,7 @@ void Restorer::restore()
 		while(info)
 		{
 			Genode::log(" ", *info);
-			info = info->next();
+			info = info->Genode::List<Dataspace_translation_info>::Element::next();
 		}
 	}
 
@@ -1511,7 +1511,7 @@ void Restorer::restore()
 			{
 				Genode::log("  ", *sdd_info);
 
-				sdd_info = sdd_info->next();
+				sdd_info = sdd_info->Genode::List<Simplified_managed_dataspace_info::Simplified_designated_ds_info>::Element::next();
 			}
 
 			smd_info = smd_info->next();

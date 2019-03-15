@@ -1386,48 +1386,63 @@ void Checkpointer::_detach_designated_dataspaces(Genode::List<Ram_session_compon
 }
 
 
+
 void Checkpointer::_checkpoint_dataspaces()
-{
+{	
 	if(verbose_debug) Genode::log("Ckpt::\033[33m", __func__, "\033[0m(...)");
-
-
+	
+	_dataspacethreads_needed = true;
+	
+				
+	
 	Dataspace_translation_info *memory_info = _dataspace_translations.first();
+
+			
 	while(memory_info)
-	{
+	{	
+		//if(!memory_info->processed) 
 		if(!memory_info->processed)
 		{
 			// Resolve managed dataspace of the incremental checkpointing mechanism
 			Simplified_managed_dataspace_info *smd_info = _managed_dataspaces.first();
 			if(smd_info) smd_info = smd_info->find_by_badge(memory_info->resto_ds_cap.local_name());
+
 			// Dataspace is managed
 			if(smd_info)
-			{
+			{	
 				Simplified_managed_dataspace_info::Simplified_designated_ds_info *sdd_info =
 						smd_info->designated_dataspaces.first();
+				
 				while(sdd_info)
 				{
 					Genode::log("checkpoint managed dataspace...");
 					if(sdd_info->modified)
 						{
-  						PROFILE_SCOPE("_checkpoint_dataspace_content()", "blue", _timer)
-
-						_checkpoint_dataspace_content(memory_info->ckpt_ds_cap, sdd_info->dataspace_cap, sdd_info->addr, sdd_info->size);
-
+  						PROFILE_SCOPE("_checkpoint_dataspace_content_args", "blue", _timer)
+						
+					
+						_sdd_fifo.enqueue(sdd_info);
+						_memory_managed_fifo.enqueue(memory_info);
+						
+						
+						//_checkpoint_dataspace_content(memory_info->ckpt_ds_cap, sdd_info->dataspace_cap, sdd_info->addr, sdd_info->size);
 						}
 
-						
-					sdd_info = sdd_info->next();
+					
+					sdd_info = sdd_info->Genode::List<Simplified_managed_dataspace_info::Simplified_designated_ds_info>::Element::next();
 				}
-
+	
 			}
 			// Dataspace is not managed
 			else
 			{
 				Genode::log("checkpoint regular dataspace...");
 				{
-  					PROFILE_SCOPE("_checkpoint_dataspace_content()", "purple", _timer)
+  					PROFILE_SCOPE("_checkpoint_dataspace_content_args", "purple", _timer)
 
-					_checkpoint_dataspace_content(memory_info->ckpt_ds_cap, memory_info->resto_ds_cap, 0, memory_info->size);
+					_memory_not_managed_fifo.enqueue(memory_info);
+					Genode::log("memory enqueued");
+					//_checkpoint_dataspace_content(memory_info->ckpt_ds_cap, memory_info->resto_ds_cap, 0, memory_info->size);
 				}
 				
 				
@@ -1436,8 +1451,9 @@ void Checkpointer::_checkpoint_dataspaces()
 			memory_info->processed = true;
 		}
 
-		memory_info = memory_info->next();
+		memory_info = memory_info->Genode::List<Dataspace_translation_info>::Element::next();
 	}
+	_dataspacethreads_needed = false;
 }
 
 
@@ -1450,10 +1466,10 @@ void Checkpointer::_checkpoint_dataspace_content(Genode::Dataspace_capability ds
 
 	char *dst_addr_start = _state._env.rm().attach(dst_ds_cap);
 	char *src_addr_start = _state._env.rm().attach(src_ds_cap);
-
+	
 	Genode::log("Genode::memcpy(), size: ", size);
 	Genode::memcpy(dst_addr_start + dst_offset, src_addr_start, size);
-
+	
 	_state._env.rm().detach(src_addr_start);
 	_state._env.rm().detach(dst_addr_start);
 }
@@ -1483,211 +1499,10 @@ Checkpointer::~Checkpointer()
 
 void Checkpointer::checkpoint()
 {	
-	using Genode::log;
-
-	if(verbose_debug) Genode::log("Ckpt::\033[33m", __func__, "\033[0m()");
-
-	// Pause child
-	_child.pause();	
 	
 	
-	{
-  	PROFILE_SCOPE("checkpoint()", "yellow", _timer)    //scope profiling open
-	
-	
-	//Thread_capability thread = _state._env.cpu().create_thread(_state._env.pd_session_cap(),"thread classless",Thread::Location() , Thread::Weight(), 0);	
-		
-	//{
-	//	PROFILE_SCOPE("Threads", "red", _timer) 	
-
-	Cpu_helper thread0(_state._env, "thread 0 entry", _state._env.cpu(), *this);
-	Cpu_helper thread2(_state._env, "thread 2 entry", _state._env.cpu(), *this);
-		
-	{
-	  	PROFILE_SCOPE("Threads1", "red", _timer) 	
-		Cpu_helper thread1(_state._env, "prio high  ", _state._env.cpu(), *this);
-	}
-	{
-	  	PROFILE_SCOPE("Threads3", "red", _timer) 	
-		Cpu_helper thread3(_state._env, "prio high  ", _state._env.cpu(), *this);
-	}
-
-	{
-	  	PROFILE_SCOPE("Threads start", "red", _timer) 
-		thread0.start();
-	}
-	{
-	  	PROFILE_SCOPE("Threads2 start", "red", _timer) 
-		thread2.start();
-	}		
-	{
-	  	PROFILE_SCOPE("Threads join", "red", _timer) 
-		thread0.join();
-	}
-	{
-	  	PROFILE_SCOPE("Threads2 join", "red", _timer) 
-		thread2.join();
-	}
-	 		
-	//}
-	
-	{
-  		PROFILE_SCOPE("_create_kcap_mappings()", "green", _timer) 	
-
-	// Create mapping of badge to kcap
-	_kcap_mappings = _create_kcap_mappings();
-	}	
-
-	if(verbose_debug)
-	{
-		Genode::log("Capability map:");
-		Kcap_badge_info const *info = _kcap_mappings.first();
-		if(!info) Genode::log(" <empty>\n");
-		while(info)
-		{
-			Genode::log(" ", *info);
-			info = info->next();
-		}
-	}
-
-
-
-	// Create a list of region map dataspaces which are known to child
-	// These dataspaces are ignored when creating copy dataspaces
-	// For new intercepted sessions which trade managed dataspaces between child and themselves,
-	// the region map dataspace capability has to be inserted into this list
-	Genode::List<Rm_session_component> *rm_sessions = nullptr;
-	if(_child.custom_services().rm_root) rm_sessions = &_child.custom_services().rm_root->session_infos();
-	{
-  		PROFILE_SCOPE("_create_region_map_dataspaces_list()", "green", _timer)
-
-	_region_maps = _create_region_map_dataspaces_list(_child.custom_services().pd_root->session_infos(), rm_sessions);
-	}
-
-	if(verbose_debug)
-	{
-		Genode::log("Region map dataspaces:");
-		Ref_badge_info const *info = _region_maps.first();
-		while(info)
-		{
-			Genode::log(" ", *info);
-			info = info->next();
-		}
-	}
-
-	// Prepare state lists
-	// implicitly _copy_dataspaces modified with the child's currently known dataspaces and copy dataspaces
-	{
-		PROFILE_SCOPE("_prepare_ram_sessions()", "green", _timer)
-
-	_prepare_ram_sessions(_state._stored_ram_sessions, _child.custom_services().ram_root->session_infos());
-	}
-	{
-		PROFILE_SCOPE("_prepare_pd_sessions()", "green", _timer)
-
-	_prepare_pd_sessions(_state._stored_pd_sessions, _child.custom_services().pd_root->session_infos());
-	}
-	{
-		PROFILE_SCOPE("_prepare_cpu_sessions()", "green", _timer)
-
-	_prepare_cpu_sessions(_state._stored_cpu_sessions, _child.custom_services().cpu_root->session_infos());
-	}
-	
-	if(_child.custom_services().rm_root)
-		{
-		PROFILE_SCOPE("_prepare_rm_sessions()", "green", _timer)
-
-		_prepare_rm_sessions(_state._stored_rm_sessions, _child.custom_services().rm_root->session_infos());
-		}
-		
-	if(_child.custom_services().log_root)
-		{
-		PROFILE_SCOPE("_prepare_log_sessions()", "green", _timer)
-
-		_prepare_log_sessions(_state._stored_log_sessions, _child.custom_services().log_root->session_infos());
-		}
-		
-	if(_child.custom_services().timer_root)
-		{
-		PROFILE_SCOPE("_prepare_timer_sessions()", "green", _timer)
-
-		_prepare_timer_sessions(_state._stored_timer_sessions, _child.custom_services().timer_root->session_infos());
-		}
-		
-
-	if(verbose_debug)
-	{
-		Genode::log("Dataspaces to checkpoint:");
-		Dataspace_translation_info *info = _dataspace_translations.first();
-		while(info)
-		{
-			Genode::log(" ", *info);
-			info = info->next();
-		}
-	}
-
-	// Create a list of managed dataspaces
-	{
-		PROFILE_SCOPE("_create_managed_dataspace_list()", "green", _timer)
-
-		_create_managed_dataspace_list(_child.custom_services().ram_root->session_infos());
-	}
-	if(verbose_debug)
-	{
-		Genode::log("Managed dataspaces:");
-		Simplified_managed_dataspace_info const *smd_info = _managed_dataspaces.first();
-		if(!smd_info) Genode::log(" <empty>\n");
-		while(smd_info)
-		{
-			Genode::log(" ", *smd_info);
-
-			Simplified_managed_dataspace_info::Simplified_designated_ds_info const *sdd_info =
-					smd_info->designated_dataspaces.first();
-			if(!sdd_info) Genode::log("  <empty>\n");
-			while(sdd_info)
-			{
-				Genode::log("  ", *sdd_info);
-
-				sdd_info = sdd_info->next();
-			}
-
-			smd_info = smd_info->next();
-		}
-	}
-	
-	// Detach all designated dataspaces
-	{
-		PROFILE_SCOPE("_detach_designated_dataspaces()", "green", _timer)
-		
-		_detach_designated_dataspaces(_child.custom_services().ram_root->session_infos());		
-	}
-	
-
-	// Copy child dataspaces' content and to stored dataspaces' content
-	{
-		PROFILE_SCOPE("_checkpoint_dataspaces()", "green", _timer)
-		
-		_checkpoint_dataspaces();	
-	}
-		
-
-	//if(true) Genode::log(_child);
-	//if(true) Genode::log(_state);
-
-	// Clean up
-	{
-		PROFILE_SCOPE("_destroy_lists", "green", _timer)
-		
-		_destroy_list(_kcap_mappings);
-		_destroy_list(_dataspace_translations);
-		_destroy_list(_region_maps);
-		_destroy_list(_managed_dataspaces);		
-	}
-	
-	//unexplained time loss??	
-
-	}  //scope profiling close
-
-	// Resume child
-	_child.resume();
+	Affinity::Space affinity_space = _state._env.cpu().affinity_space();
+	Cpu_helper thread0(_state._env, "Thread Main entry", _state._env.cpu(), *this, affinity_space.location_of_index(0), 0);
+	thread0.start();
+	thread0.join();
 }

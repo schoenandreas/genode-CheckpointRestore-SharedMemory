@@ -27,7 +27,7 @@ struct Rtcr::Simplified_managed_dataspace_info : Genode::List<Simplified_managed
 	/**
 	 * List element to store simplified information of a designated dataspace
 	 */
-	struct Simplified_designated_ds_info : Genode::List<Simplified_designated_ds_info>::Element
+	struct Simplified_designated_ds_info : Genode::List<Simplified_designated_ds_info>::Element, Genode::Fifo<Simplified_managed_dataspace_info::Simplified_designated_ds_info>::Element
 	{
 		Genode::Ram_dataspace_capability const dataspace_cap;
 		Genode::addr_t const addr;
@@ -55,7 +55,7 @@ struct Rtcr::Simplified_managed_dataspace_info : Genode::List<Simplified_managed
 	{
 		if(badge == region_map_dataspace_cap.local_name())
 			return this;
-		Simplified_managed_dataspace_info *info = next();
+		Simplified_managed_dataspace_info *info = Element::next();
 		return info ? info->find_by_badge(badge) : 0;
 	}
 

@@ -20,7 +20,7 @@ namespace Rtcr {
  * Structure to encapsulate a source dataspace, which is used to copy from,
  * and the destination dataspace, which is used to copy to
  */
-struct Rtcr::Dataspace_translation_info : Genode::List<Dataspace_translation_info>::Element
+struct Rtcr::Dataspace_translation_info : Genode::List<Dataspace_translation_info>::Element, Genode::Fifo<Dataspace_translation_info>::Element
 {
 	Genode::Ram_dataspace_capability ckpt_ds_cap;
 	Genode::Dataspace_capability     resto_ds_cap;
@@ -34,7 +34,7 @@ struct Rtcr::Dataspace_translation_info : Genode::List<Dataspace_translation_inf
 	{
 		if(badge == this->resto_ds_cap.local_name())
 			return this;
-		Dataspace_translation_info *info = next();
+		Dataspace_translation_info *info = Genode::List<Dataspace_translation_info>::Element::next();
 		return info ? info->find_by_resto_badge(badge) : 0;
 	}
 
@@ -42,7 +42,7 @@ struct Rtcr::Dataspace_translation_info : Genode::List<Dataspace_translation_inf
 	{
 		if(badge == this->ckpt_ds_cap.local_name())
 			return this;
-		Dataspace_translation_info *info = next();
+		Dataspace_translation_info *info = Genode::List<Dataspace_translation_info>::Element::next();
 		return info ? info->find_by_ckpt_badge(badge) : 0;
 	}
 

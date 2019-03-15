@@ -30,7 +30,7 @@ namespace Rtcr {
 	class Checkpointer;
 	class Restorer;	
 }
-
+class Cpu_helper;
 
 
 class Rtcr::Target_state
@@ -38,7 +38,7 @@ class Rtcr::Target_state
 	friend class Checkpointer;
 	friend class Restorer;
 	friend class Main;
-
+	friend class ::Cpu_helper;
 
 private:
 	Genode::Env       &_env;

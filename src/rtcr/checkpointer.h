@@ -69,7 +69,16 @@ private:
 	 */
 	Genode::List<Ref_badge_info>            _region_maps;
 	Genode::List<Simplified_managed_dataspace_info> _managed_dataspaces;
-
+	
+	/**
+	 * Fifo list of dataspaces waiting to be copied by Cpu_helper threads
+	 */
+	Genode::Fifo<Rtcr::Dataspace_translation_info> _memory_managed_fifo;
+	Genode::Fifo<Simplified_managed_dataspace_info::Simplified_designated_ds_info> _sdd_fifo;	
+	Genode::Fifo<Rtcr::Dataspace_translation_info> _memory_not_managed_fifo;
+	
+	bool _dataspacethreads_needed = true;	
+	
 	Timer::Connection &_timer;
 	
 	
@@ -161,7 +170,7 @@ private:
 	void _checkpoint_dataspaces();
 	void _checkpoint_dataspace_content(Genode::Dataspace_capability dst_ds_cap, Genode::Dataspace_capability src_ds_cap,
 			Genode::addr_t dst_offset, Genode::size_t size);
-	
+
 	
 
 public:

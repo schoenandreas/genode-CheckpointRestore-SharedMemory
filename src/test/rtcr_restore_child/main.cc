@@ -31,6 +31,10 @@ struct Rtcr::Main
 	Main(Genode::Env &env_) : env(env_)
 	{
 		using namespace Genode;
+		
+		Affinity::Space own_affinity_space = env.cpu().affinity_space();
+
+		log("own_affinity_space: ", own_affinity_space.width(), " x ", own_affinity_space.height());
 
 		Timer::Connection timer { env };
 
@@ -38,14 +42,16 @@ struct Rtcr::Main
 		child.start();
 
 		timer.msleep(3000);
-
+		
+		
+		
 		Target_state ts(env, heap);
 		Checkpointer ckpt(heap, child, ts, timer);
 		ckpt.checkpoint();
 
-		//Target_child child_restored { env, heap, parent_services, "sheep_counter", 0 };         //minimized output
-		//Restorer resto(heap, child_restored, ts);						//
-		//child_restored.start(resto);								//
+		Target_child child_restored { env, heap, parent_services, "sheep_counter", 0 };         //minimized output
+		Restorer resto(heap, child_restored, ts);						//
+		child_restored.start(resto);								//
 
 		log("The End");
 		Genode::sleep_forever();
