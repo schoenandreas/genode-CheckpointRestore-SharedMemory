@@ -42,6 +42,8 @@ void Component::construct(Genode::Env &env)
 	{
 		log(n, " sheep. zzZ");
 		n++;
+		//add sleep time here to crash counter so Rtcr::Main gets context on wandboard hardware
+		//if(8< n && n<10) timer.msleep(2000);
 
 		/*
 		 * Busy waiting is used here to avoid pausing this component during an RPC call to the timer component.

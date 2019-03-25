@@ -29,8 +29,9 @@ namespace Rtcr {
 	// Forward declaration
 	class Checkpointer;
 	class Restorer;	
+	class Checkpoint_thread;
 }
-class Cpu_helper;
+
 
 
 class Rtcr::Target_state
@@ -38,7 +39,7 @@ class Rtcr::Target_state
 	friend class Checkpointer;
 	friend class Restorer;
 	friend class Main;
-	friend class ::Cpu_helper;
+	friend class Checkpoint_thread;
 
 private:
 	Genode::Env       &_env;

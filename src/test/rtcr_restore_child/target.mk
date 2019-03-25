@@ -13,7 +13,8 @@ SRC_CC += main.cc \
           target_child.cc \
           target_state.cc \
           checkpointer.cc \
-          restorer.cc
+          restorer.cc \
+	  checkpoint_thread.cc
 
 LIBS   += base
 
@@ -32,3 +33,4 @@ vpath target_child.cc          $(REP_DIR)/src/rtcr
 vpath target_state.cc          $(REP_DIR)/src/rtcr
 vpath checkpointer.cc          $(REP_DIR)/src/rtcr
 vpath restorer.cc              $(REP_DIR)/src/rtcr
+vpath checkpoint_thread.cc     $(REP_DIR)/src/rtcr

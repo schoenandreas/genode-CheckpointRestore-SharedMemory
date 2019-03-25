@@ -9,9 +9,6 @@
 #include <base/internal/cap_map.h>
 #include <base/internal/cap_alloc.h>
 
-#include <util/profiler.h>
-#include "Cpu_helper.h"
-
 
 
 using namespace Rtcr;
@@ -1387,7 +1384,7 @@ void Checkpointer::_detach_designated_dataspaces(Genode::List<Ram_session_compon
 
 
 
-void Checkpointer::_checkpoint_dataspaces()
+void Checkpointer::_checkpoint_dataspaces(int _threadType)
 {	
 	if(verbose_debug) Genode::log("Ckpt::\033[33m", __func__, "\033[0m(...)");
 	
@@ -1420,15 +1417,17 @@ void Checkpointer::_checkpoint_dataspaces()
 						{
   						PROFILE_SCOPE("_checkpoint_dataspace_content_args", "blue", _timer)
 						
-					
-						_sdd_fifo.enqueue(sdd_info);
-						_memory_managed_fifo.enqueue(memory_info);
-						
-						
-						//_checkpoint_dataspace_content(memory_info->ckpt_ds_cap, sdd_info->dataspace_cap, sdd_info->addr, sdd_info->size);
-						}
-
-					
+							if(_threadType == 1)
+							{
+								_sdd_fifo.enqueue(sdd_info);
+								_memory_managed_fifo.enqueue(memory_info);
+								Genode::log("memory enqueued");				
+							}
+							else
+							{
+								_checkpoint_dataspace_content(memory_info->ckpt_ds_cap, sdd_info->dataspace_cap, sdd_info->addr, sdd_info->size);
+							}
+						}		
 					sdd_info = sdd_info->Genode::List<Simplified_managed_dataspace_info::Simplified_designated_ds_info>::Element::next();
 				}
 	
@@ -1439,12 +1438,17 @@ void Checkpointer::_checkpoint_dataspaces()
 				Genode::log("checkpoint regular dataspace...");
 				{
   					PROFILE_SCOPE("_checkpoint_dataspace_content_args", "purple", _timer)
-
-					_memory_not_managed_fifo.enqueue(memory_info);
-					Genode::log("memory enqueued");
-					//_checkpoint_dataspace_content(memory_info->ckpt_ds_cap, memory_info->resto_ds_cap, 0, memory_info->size);
-				}
-				
+					
+						if(_threadType == 1)
+						{
+							_memory_not_managed_fifo.enqueue(memory_info);
+							Genode::log("memory enqueued");							
+						}
+						else
+						{
+							_checkpoint_dataspace_content(memory_info->ckpt_ds_cap, memory_info->resto_ds_cap, 0, memory_info->size);	
+						}
+				}			
 				
 			}
 
@@ -1493,16 +1497,12 @@ Checkpointer::~Checkpointer()
 }
 
 
-
-
-
-
+//creates and starts thread on location 0, which goes through the checkpointing process
+//use as last parameter: 1 for threading, 0 for no threading
 void Checkpointer::checkpoint()
-{	
-	
-	
+{		
 	Affinity::Space affinity_space = _state._env.cpu().affinity_space();
-	Cpu_helper thread0(_state._env, "Thread Main entry", _state._env.cpu(), *this, affinity_space.location_of_index(0), 0);
+	Checkpoint_thread thread0(_state._env, "Thread Main entry", _state._env.cpu(), *this, affinity_space.location_of_index(0), 1);
 	thread0.start();
 	thread0.join();
 }

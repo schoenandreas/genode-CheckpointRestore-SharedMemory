@@ -47,5 +47,4 @@ append qemu_args " -nographic "
 
 
 run_genode_until "11 sheep.*\n" 10
-#run_genode_until "3 sheeps.*\n" 10
 #run_genode_until forever

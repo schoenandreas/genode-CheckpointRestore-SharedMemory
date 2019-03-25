@@ -47,9 +47,10 @@ build_boot_image { core init timer target_restorer-tester sheep_counter arbitrar
 
 append qemu_args " -nographic -smp 4"
 
+
+
 source ${genode_dir}/repos/genode-Profiler/run/profiler.inc
 
 
 run_genode_until "11 sheep.*\n" 10
-#run_genode_until "3 sheeps.*\n" 10
 #run_genode_until forever

@@ -43,12 +43,14 @@ struct Rtcr::Main
 
 		timer.msleep(3000);
 		
-		
+	
 		
 		Target_state ts(env, heap);
 		Checkpointer ckpt(heap, child, ts, timer);
 		ckpt.checkpoint();
-
+		
+		Genode::log(ts);		
+		
 		Target_child child_restored { env, heap, parent_services, "sheep_counter", 0 };         //minimized output
 		Restorer resto(heap, child_restored, ts);						//
 		child_restored.start(resto);								//

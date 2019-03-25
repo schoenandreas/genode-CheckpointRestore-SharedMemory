@@ -16,25 +16,27 @@
 /* Rtcr includes */
 #include "target_state.h"
 #include "target_child.h"
+#include "checkpoint_thread.h"
 #include "util/kcap_badge_info.h"
 #include "util/dataspace_translation_info.h"
 #include "util/ref_badge_info.h"
 #include "util/simplified_managed_dataspace_info.h"
+#include "util/profiler.h"
 
 	
 
 namespace Rtcr {
 	class Checkpointer;
-	
+	class Checkpoint_thread;
 	constexpr bool checkpointer_verbose_debug = false;
 }
 
-class Cpu_helper;	
+	
 
 
 class Rtcr::Checkpointer
 {
-	friend class ::Cpu_helper;
+	friend class Checkpoint_thread;
 
 private:
 
@@ -71,16 +73,21 @@ private:
 	Genode::List<Simplified_managed_dataspace_info> _managed_dataspaces;
 	
 	/**
-	 * Fifo list of dataspaces waiting to be copied by Cpu_helper threads
+	 * Fifo list of dataspaces waiting to be copied by Checkpoint_thread threads
 	 */
 	Genode::Fifo<Rtcr::Dataspace_translation_info> _memory_managed_fifo;
 	Genode::Fifo<Simplified_managed_dataspace_info::Simplified_designated_ds_info> _sdd_fifo;	
 	Genode::Fifo<Rtcr::Dataspace_translation_info> _memory_not_managed_fifo;
-	
+	/**
+	 * Boolean to signal weather Checkpoint_thread threads of type 4 should still wait for data to be inserted into the Fifos
+	 */
 	bool _dataspacethreads_needed = true;	
-	
+	/**
+	 * Timer for the profiler
+	 */
 	Timer::Connection &_timer;
 	
+
 	
 
 	template<typename T>
@@ -167,7 +174,7 @@ private:
 
 	void _detach_designated_dataspaces(Genode::List<Ram_session_component> &ram_sessions);
 
-	void _checkpoint_dataspaces();
+	void _checkpoint_dataspaces(int _threadType);
 	void _checkpoint_dataspace_content(Genode::Dataspace_capability dst_ds_cap, Genode::Dataspace_capability src_ds_cap,
 			Genode::addr_t dst_offset, Genode::size_t size);
 
