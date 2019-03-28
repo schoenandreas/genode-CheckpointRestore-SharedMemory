@@ -34,7 +34,12 @@ void Component::construct(Genode::Env &env)
 	unsigned int *addr = env.rm().attach(ds_cap);
 	unsigned int &n = addr[3];
 	n = 1;
-
+	
+	for(int i = 0; i < 11; i++)
+	{
+		Dataspace_capability ds_cap2 = env.ram().alloc(10*1024*1024);
+		env.rm().attach(ds_cap2);
+	}
 	//env.parent().upgrade(timer, "ram_quota=8K");
 	//env.parent().upgrade(env.ram_session_cap(), "ram_quota=24K");
 

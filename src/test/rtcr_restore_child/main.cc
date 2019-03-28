@@ -41,7 +41,7 @@ struct Rtcr::Main
 		Target_child child { env, heap, parent_services, "sheep_counter", 0 };
 		child.start();
 
-		timer.msleep(3000);
+		timer.msleep(6000);
 		
 	
 		

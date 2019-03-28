@@ -8,6 +8,7 @@
 #include "checkpoint_thread.h"
 
 
+
 using namespace Genode;
 
 
@@ -103,7 +104,13 @@ void Rtcr::Checkpoint_thread::_waitForData()
 
 // Read dataspace arguments from fifo and checkpoint these dataspaces	
 void Rtcr::Checkpoint_thread::_checkpoint_fifo_dataspaces()
-{
+{	
+	// Create string for profiler
+	char args_buf[50];
+	Genode::snprintf(args_buf, sizeof(args_buf), "%s _checkpoint_dataspace_content" , _name);
+	char *p = args_buf;        
+	const char *ds_content = p;
+
 	while(_ckpt._dataspacethreads_needed || !_ckpt._memory_not_managed_fifo.empty() || !_ckpt._memory_managed_fifo.empty()){
 		
 		_waitForData();
@@ -112,11 +119,11 @@ void Rtcr::Checkpoint_thread::_checkpoint_fifo_dataspaces()
 		if(!_ckpt._memory_not_managed_fifo.empty())
 		{
 			Rtcr::Dataspace_translation_info *memory_info = _ckpt._memory_not_managed_fifo.dequeue();
-			const char * tmp[] = {  _name };
-			Genode::log("dataspace args dequeued from ", tmp[0]);
-			{					
-				PROFILE_SCOPE((_name), "purple", _ckpt._timer)
-
+			
+			Genode::log("dataspace args dequeued by ", _name);
+			{							
+				PROFILE_SCOPE(ds_content, "purple", _ckpt._timer);
+	
 				_ckpt._checkpoint_dataspace_content(memory_info->ckpt_ds_cap, memory_info->resto_ds_cap, 0, memory_info->size);	
 			}							
 		}
@@ -125,10 +132,10 @@ void Rtcr::Checkpoint_thread::_checkpoint_fifo_dataspaces()
 		{
 			Rtcr::Dataspace_translation_info *memory_info = _ckpt._memory_managed_fifo.dequeue();
 			Rtcr::Simplified_managed_dataspace_info::Simplified_designated_ds_info *sdd_info = _ckpt._sdd_fifo.dequeue();
-			const char * tmp[] = {  _name };
-			Genode::log("dataspace args dequeued from ", tmp[0]);
+			
+			Genode::log("dataspace args dequeued by ", _name);
 			{					
-				PROFILE_SCOPE((_name), "blue", _ckpt._timer)
+				PROFILE_SCOPE(ds_content, "blue", _ckpt._timer)
 
 				_ckpt._checkpoint_dataspace_content(memory_info->ckpt_ds_cap, sdd_info->dataspace_cap, sdd_info->addr, sdd_info->size);
 			}							
